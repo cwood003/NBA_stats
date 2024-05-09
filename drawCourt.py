@@ -1,204 +1,70 @@
-# dependencies
-
-import pandas as pd
-import matplotlib as mpl
 import matplotlib.pyplot as plt
-import plotly.graph_objects as go
-import numpy as np
+from matplotlib.patches import Circle, Rectangle, Arc
 
-fig = go.Figure()
+def draw_court(ax=None, color='black', lw=2, outer_lines=False):
+    # If an axes object isn't provided to plot onto, just get current one
+    if ax is None:
+        ax = plt.gca()
 
-def draw_court(fig, fig_width=600, margins=10):
+    # Create the various parts of an NBA basketball court
 
-    # From: https://community.plot.ly/t/arc-shape-with-path/7205/5
-    def ellipse_arc(x_center=0.0, y_center=0.0, a=10.5, b=10.5, start_angle=0.0, end_angle=2 * np.pi, N=200,
-                    closed=False):
-        t = np.linspace(start_angle, end_angle, N)
-        x = x_center + a * np.cos(t)
-        y = y_center + b * np.sin(t)
-        path = f'M {x[0]}, {y[0]}'
-        for k in range(1, len(t)):
-            path += f'L{x[k]}, {y[k]}'
-        if closed:
-            path += ' Z'
-        return path
+    # Create the basketball hoop
+    # Diameter of a hoop is 18" so it has a radius of 9", which is a value
+    # 7.5 in our coordinate system
+    hoop = Circle((0, 0), radius=7.5, linewidth=lw, color=color, fill=False)
 
-    fig_height = fig_width * (470 + 2 * margins) / (500 + 2 * margins)
-    fig.update_layout(width=fig_width, height=fig_height)
+    # Create backboard
+    backboard = Rectangle((-30, -7.5), 60, -1, linewidth=lw, color=color)
 
-    # Set axes ranges
-    fig.update_xaxes(range=[-250 - margins, 250 + margins])
-    fig.update_yaxes(range=[-52.5 - margins, 417.5 + margins])
+    # The paint
+    # Create the outer box 0f the paint, width=16ft, height=19ft
+    outer_box = Rectangle((-80, -47.5), 160, 190, linewidth=lw, color=color,
+                          fill=False)
+    # Create the inner box of the paint, widt=12ft, height=19ft
+    inner_box = Rectangle((-60, -47.5), 120, 190, linewidth=lw, color=color,
+                          fill=False)
 
-    threept_break_y = 89.47765084
-    three_line_col = "#777777"
-    main_line_col = "#777777"
+    # Create free throw top arc
+    top_free_throw = Arc((0, 142.5), 120, 120, theta1=0, theta2=180,
+                         linewidth=lw, color=color, fill=False)
+    # Create free throw bottom arc
+    bottom_free_throw = Arc((0, 142.5), 120, 120, theta1=180, theta2=0,
+                            linewidth=lw, color=color, linestyle='dashed')
+    # Restricted Zone, it is an arc with 4ft radius from center of the hoop
+    restricted = Arc((0, 0), 80, 80, theta1=0, theta2=180, linewidth=lw,
+                     color=color)
 
-    fig.update_layout(
-        # Line Horizontal
-        margin=dict(l=20, r=20, t=20, b=20),
-        paper_bgcolor="white",
-        plot_bgcolor="antiquewhite",
-        yaxis=dict(
-            scaleanchor="x",
-            scaleratio=1,
-            showgrid=False,
-            zeroline=False,
-            showline=False,
-            ticks='',
-            showticklabels=False,
-            fixedrange=True,
-        ),
-        xaxis=dict(
-            showgrid=False,
-            zeroline=False,
-            showline=False,
-            ticks='',
-            showticklabels=False,
-            fixedrange=True,
-        ),
-        shapes=[
-            # Outside Court Rectangle
-            dict(
-                type="rect", x0=-250, y0=-52.5, x1=250, y1=417.5,
-                line=dict(color=main_line_col, width=1),
-                # fillcolor='#333333',
-                layer='below'
-            ),
+    # Three point line
+    # Create the side 3pt lines, they are 14ft long before they begin to arc
+    corner_three_a = Rectangle((-220, -47.5), 0, 140, linewidth=lw,
+                               color=color)
+    corner_three_b = Rectangle((220, -47.5), 0, 140, linewidth=lw, color=color)
+    # 3pt arc - center of arc will be the hoop, arc is 23'9" away from hoop
+    # I just played around with the theta values until they lined up with the
+    # threes
+    three_arc = Arc((0, 0), 475, 475, theta1=22, theta2=158, linewidth=lw,
+                    color=color)
 
-            # Outside free throw rectangle
-            dict(
-                type="rect", x0=-80, y0=-52.5, x1=80, y1=137.5,
-                line=dict(color=main_line_col, width=1),
-                # fillcolor='#333333',
-                layer='below'
-            ),
+    # Center Court
+    center_outer_arc = Arc((0, 422.5), 120, 120, theta1=180, theta2=0,
+                           linewidth=lw, color=color)
+    center_inner_arc = Arc((0, 422.5), 40, 40, theta1=180, theta2=0,
+                           linewidth=lw, color=color)
 
-            # Inside free throw rectangle
-            dict(
-                type="rect", x0=-60, y0=-52.5, x1=60, y1=137.5,
-                line=dict(color=main_line_col, width=1),
-                # fillcolor='#333333',
-                layer='below'
-            ),
+    # List of the court elements to be plotted onto the axes
+    court_elements = [hoop, backboard, outer_box, inner_box, top_free_throw,
+                      bottom_free_throw, restricted, corner_three_a,
+                      corner_three_b, three_arc, center_outer_arc,
+                      center_inner_arc]
 
-            # Free throw jumpball circle
-            dict(
-                type="circle", x0=-60, y0=77.5, x1=60, y1=197.5, xref="x", yref="y",
-                line=dict(color=main_line_col, width=1),
-                # fillcolor='#dddddd',
-                layer='below'
-            ),
+    if outer_lines:
+        # Draw the half court line, baseline and side out bound lines
+        outer_lines = Rectangle((-250, -47.5), 500, 470, linewidth=lw,
+                                color=color, fill=False)
+        court_elements.append(outer_lines)
 
-            # Connect hoop to backboard
-            dict(
-                type="rect", x0=-2, y0=-7.25, x1=2, y1=-12.5,
-                line=dict(color="#ec7607", width=1),
-                fillcolor='#ec7607',
-            ),
+    # Add the court elements onto the axes
+    for element in court_elements:
+        ax.add_patch(element)
 
-            # hoop
-            dict(
-                type="circle", x0=-7.5, y0=-7.5, x1=7.5, y1=7.5, xref="x", yref="y",
-                line=dict(color="#ec7607", width=1),
-            ),
-
-            # backboard
-            dict(
-                type="line", x0=-30, y0=-12.5, x1=30, y1=-12.5,
-                line=dict(color="#ec7607", width=1),
-            ),
-
-            # # restricted area arc
-            dict(type="path",
-                 path=ellipse_arc(a=40, b=40, start_angle=0, end_angle=np.pi),
-                 line=dict(color=main_line_col, width=1), layer='below'),
-
-            # 3pt arc
-            dict(type="path",
-                 path=ellipse_arc(a=237.5, b=237.5, start_angle=0.386283101, end_angle=np.pi - 0.386283101),
-                 line=dict(color=main_line_col, width=1), layer='below'),
-
-            # left non arc 3pt line
-            dict(
-                type="line", x0=-220, y0=-52.5, x1=-220, y1=threept_break_y,
-                line=dict(color=three_line_col, width=1), layer='below'
-            ),
-
-            # right non arc 3pt line
-            dict(
-                type="line", x0=220, y0=-52.5, x1=220, y1=threept_break_y,
-                line=dict(color=three_line_col, width=1), layer='below'
-            ),
-
-            # left top 3pt indicator
-            dict(
-                type="line", x0=-250, y0=227.5, x1=-220, y1=227.5,
-                line=dict(color= three_line_col , width=1), layer='below'
-            ),
-
-            # right top 3pt indicator
-            dict(
-                type="line", x0=250, y0=227.5, x1=220, y1=227.5,
-                line=dict(color=main_line_col, width=1), layer='below'
-            ),
-
-            # bottom left free throw tick
-            dict(
-                type="line", x0=-90, y0=17.5, x1=-80, y1=17.5,
-                line=dict(color=main_line_col, width=1), layer='below'
-            ),
-
-            # second from the bottom left free throw tick
-            dict(
-                type="line", x0=-90, y0=27.5, x1=-80, y1=27.5,
-                line=dict(color=main_line_col, width=1), layer='below'
-            ),
-
-            # third from the bottom left free throw tick
-            dict(
-                type="line", x0=-90, y0=57.5, x1=-80, y1=57.5,
-                line=dict(color=main_line_col, width=1), layer='below'
-            ),
-
-            # fourth from the bottom left free throw tick
-            dict(
-                type="line", x0=-90, y0=87.5, x1=-80, y1=87.5,
-                line=dict(color=main_line_col, width=1), layer='below'
-            ),
-
-            # bottom right free throw tick
-            dict(
-                type="line", x0=90, y0=17.5, x1=80, y1=17.5,
-                line=dict(color=main_line_col, width=1), layer='below'
-            ),
-
-            # second from the bottom right free throw tick
-            dict(
-                type="line", x0=90, y0=27.5, x1=80, y1=27.5,
-                line=dict(color=main_line_col, width=1), layer='below'
-            ),
-
-            # third from the bottom right free throw tick
-            dict(
-                type="line", x0=90, y0=57.5, x1=80, y1=57.5,
-                line=dict(color=main_line_col, width=1), layer='below'
-            ),
-
-            # fourth from the bottom right free throw tick
-            dict(
-                type="line", x0=90, y0=87.5, x1=80, y1=87.5,
-                line=dict(color=main_line_col, width=1), layer='below'
-            ),
-
-            # top jump ball circle
-            dict(type="path",
-                 path=ellipse_arc(y_center=417.5, a=60, b=60, start_angle=-0, end_angle=-np.pi),
-                 line=dict(color=main_line_col, width=1), layer='below'),
-
-        ]
-    )
-    return True
-
-draw_court(fig)
-fig.show()
+    return ax
