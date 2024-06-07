@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "NBA_stats"
+version = "0.1.0"
+description = "project to provide stats and graphics for basketball"
+license = "MIT"
+authors = ["Cole <cwood0107@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
